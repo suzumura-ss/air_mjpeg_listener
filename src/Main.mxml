@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<mx:WindowedApplication xmlns:mx="http://www.adobe.com/2006/mxml"
+						creationComplete="init()">
+	<mx:Image id="_image" />
+	<mx:TextArea id="_header" width="300" height="120" />
+	<mx:Script>
+		<![CDATA[
+			import flash.display.Bitmap;
+			import flash.display.Loader;
+			import flash.events.Event;
+			import flash.events.IOErrorEvent;
+			import flash.utils.ByteArray;
+			import info.smoche.MJPEGLoader;
+			import info.smoche.MJPEGLoaderServer;
+			protected var _mjpegLoaderServer:MJPEGLoaderServer = null;
+			
+			protected function init():void
+			{
+				_mjpegLoaderServer = new MJPEGLoaderServer("127.0.0.1", 9999, function(client:MJPEGLoader):void {
+					trace("onConnect", client);
+				}, function(header:ByteArray, imageBytes:ByteArray):void {
+					trace("onFrame", imageBytes.length);
+					if (header.length > 0) {
+						_header.text = header.readUTFBytes(header.length);
+					}
+					var loader:Loader = new Loader();
+					loader.contentLoaderInfo.addEventListener(Event.COMPLETE, function(e:Event):void {
+						_image.data = loader.content;
+					});
+					loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, function(e:IOErrorEvent):void {
+						trace(e);
+					});
+					loader.loadBytes(imageBytes);
+				}, function(client:MJPEGLoader):void {
+					trace("onClose", client);
+				}, function(client:MJPEGLoader, e:Event):void {
+					trace("onError", client, e);
+				});
+				_mjpegLoaderServer.start();
+			}
+		]]>
+	</mx:Script>
+</mx:WindowedApplication>
